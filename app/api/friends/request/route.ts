@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
+import { rateLimit, getRateLimitIdentifier } from '../../../../lib/rateLimit'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE!
@@ -13,6 +14,24 @@ const FriendRequestSchema = z.object({
 })
 
 export async function POST(req: Request) {
+  // Rate limiting: 10 friend requests per minute per IP
+  const rateLimitId = getRateLimitIdentifier(req)
+  const rateLimitResult = rateLimit(rateLimitId, { maxRequests: 10, windowMs: 60000 })
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': '10',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
+        },
+      }
+    )
+  }
+
   try {
     const body = await req.json()
 

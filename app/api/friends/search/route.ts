@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
+import { rateLimit, getRateLimitIdentifier } from '../../../../lib/rateLimit'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -13,6 +14,24 @@ const SearchSchema = z.object({
 })
 
 export async function GET(req: Request) {
+  // Rate limiting: 30 searches per minute per IP
+  const rateLimitId = getRateLimitIdentifier(req)
+  const rateLimitResult = rateLimit(rateLimitId, { maxRequests: 30, windowMs: 60000 })
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': '30',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
+        },
+      }
+    )
+  }
+
   try {
     const url = new URL(req.url)
     const q = url.searchParams.get('q') || ''

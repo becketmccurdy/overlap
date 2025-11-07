@@ -3,6 +3,7 @@ import React from 'react'
 import { AuthProvider } from '../contexts/AuthContext'
 import TopNav from '../components/TopNav'
 import { Toaster } from 'react-hot-toast'
+import ErrorBoundary from '../components/ErrorBoundary'
 
 export const metadata = {
   title: 'Overlap - Social Availability',
@@ -13,36 +14,38 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <div className="min-h-screen bg-gray-50">
-            <TopNav />
-            <main className="container mx-auto px-4 py-6">{children}</main>
-          </div>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 3000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-              },
-              success: {
+        <ErrorBoundary>
+          <AuthProvider>
+            <div className="min-h-screen bg-gray-50">
+              <TopNav />
+              <main className="container mx-auto px-4 py-6">{children}</main>
+            </div>
+            <Toaster
+              position="top-right"
+              toastOptions={{
                 duration: 3000,
-                iconTheme: {
-                  primary: '#10b981',
-                  secondary: '#fff',
+                style: {
+                  background: '#363636',
+                  color: '#fff',
                 },
-              },
-              error: {
-                duration: 4000,
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#fff',
+                success: {
+                  duration: 3000,
+                  iconTheme: {
+                    primary: '#10b981',
+                    secondary: '#fff',
+                  },
                 },
-              },
-            }}
-          />
-        </AuthProvider>
+                error: {
+                  duration: 4000,
+                  iconTheme: {
+                    primary: '#ef4444',
+                    secondary: '#fff',
+                  },
+                },
+              }}
+            />
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

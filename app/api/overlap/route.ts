@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
+import { rateLimit, getRateLimitIdentifier } from '../../../lib/rateLimit'
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE
@@ -35,6 +36,24 @@ function toDateOnly(d: Date) {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limiting: 60 overlap calculations per minute per IP
+  const rateLimitId = getRateLimitIdentifier(req)
+  const rateLimitResult = rateLimit(rateLimitId, { maxRequests: 60, windowMs: 60000 })
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': '60',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
+        },
+      }
+    )
+  }
+
   try {
     const body = await req.json().catch(() => ({}))
 
