@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react'
 import AddBlockForm from '../../components/AddBlockForm'
+import ScheduleBlocksList from '../../components/ScheduleBlocksList'
 import WeekTimeline from '../../components/WeekTimeline'
 import FriendList from '../../components/FriendList'
 import { useAuth } from '../../contexts/AuthContext'
@@ -9,13 +10,14 @@ import { formatISO, startOfWeek, addDays } from 'date-fns'
 
 export default function DashboardPage() {
   const { user, profile } = useAuth()
-  const { blocks, refetch } = useSchedule(user?.id || '')
+  const { blocks, deleteBlock, refetch } = useSchedule(user?.id || '')
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([])
   const weekStart = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 0 }), [])
   const weekEnd = useMemo(() => addDays(weekStart, 6), [weekStart])
   const [overlaps, setOverlaps] = useState<any[]>([])
   const [minUsers, setMinUsers] = useState(2)
   const [debugMode, setDebugMode] = useState(false)
+  const [editingBlock, setEditingBlock] = useState<any | null>(null)
 
   useEffect(() => {
     // fetch overlaps for you + selected friends
@@ -41,11 +43,26 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row gap-6">
         <div className="md:w-1/3 bg-white p-4 rounded shadow">
           <h3 className="font-semibold">Your schedule</h3>
-          <AddBlockForm onAdded={refetch} />
-          <div className="mt-4">
-            <FriendList onToggle={(id, active) => {
-              setSelectedFriendIds((s) => (active ? [...s, id] : s.filter((x) => x !== id)))
-            }} />
+          <AddBlockForm
+            onAdded={refetch}
+            editingBlock={editingBlock}
+            onCancelEdit={() => setEditingBlock(null)}
+          />
+          <ScheduleBlocksList
+            blocks={blocks}
+            onEdit={(block) => setEditingBlock(block)}
+            onDelete={async (id) => {
+              await deleteBlock(id)
+              refetch()
+            }}
+          />
+          <div className="mt-6">
+            <h4 className="font-semibold mb-2">Friends</h4>
+            <FriendList
+              onToggle={(id, active) => {
+                setSelectedFriendIds((s) => (active ? [...s, id] : s.filter((x) => x !== id)))
+              }}
+            />
           </div>
         </div>
         <div className="md:flex-1 bg-white p-4 rounded shadow">
