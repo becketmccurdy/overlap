@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -25,11 +26,15 @@ export default function ForgotPasswordPage() {
 
       if (error) {
         setError(error.message)
+        toast.error(error.message)
       } else {
         setSent(true)
+        toast.success('Password reset link sent to your email')
       }
     } catch (err: any) {
-      setError('Failed to send reset email. Please try again.')
+      const errorMsg = 'Failed to send reset email. Please try again.'
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally {
       setLoading(false)
     }

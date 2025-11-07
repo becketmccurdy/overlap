@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -51,14 +52,18 @@ export default function ResetPasswordPage() {
 
       if (error) {
         setError(error.message)
+        toast.error(error.message)
       } else {
         setSuccess(true)
+        toast.success('Password reset successfully')
         setTimeout(() => {
           router.push('/dashboard')
         }, 2000)
       }
     } catch (err: any) {
-      setError('Failed to reset password. Please try again.')
+      const errorMsg = 'Failed to reset password. Please try again.'
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally {
       setLoading(false)
     }

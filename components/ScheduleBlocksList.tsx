@@ -1,6 +1,8 @@
 'use client'
 import React, { useState } from 'react'
 import { format } from 'date-fns'
+import toast from 'react-hot-toast'
+import ConfirmDialog from './ConfirmDialog'
 
 type Block = {
   id: string
@@ -24,27 +26,48 @@ export default function ScheduleBlocksList({
   onDelete: (id: string) => void
 }) {
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Block | null>(null)
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   async function handleDelete(block: Block) {
-    if (!confirm(`Delete "${block.title}"?`)) return
-
     setDeleting(block.id)
     try {
       await onDelete(block.id)
+      toast.success(`"${block.title}" deleted successfully`)
+      setConfirmDelete(null)
+    } catch (err) {
+      toast.error('Failed to delete schedule block')
     } finally {
       setDeleting(null)
     }
   }
 
   if (blocks.length === 0) {
-    return <div className="text-sm text-gray-500 mt-4">No schedule blocks yet</div>
+    return (
+      <div className="mt-4 text-center py-8 bg-gray-50 rounded border border-dashed border-gray-300">
+        <div className="text-4xl mb-2">📅</div>
+        <p className="text-sm font-medium text-gray-700 mb-1">No schedule blocks yet</p>
+        <p className="text-xs text-gray-500">Add your classes, work hours, or busy times above</p>
+      </div>
+    )
   }
 
   return (
-    <div className="mt-4 space-y-2">
-      <h4 className="font-medium text-sm">Your schedule blocks:</h4>
+    <>
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        title="Delete Schedule Block"
+        message={`Are you sure you want to delete "${confirmDelete?.title}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={() => confirmDelete && handleDelete(confirmDelete)}
+        onCancel={() => setConfirmDelete(null)}
+      />
+
+      <div className="mt-4 space-y-2">
+        <h4 className="font-medium text-sm">Your schedule blocks:</h4>
       {blocks.map((block) => (
         <div
           key={block.id}
@@ -81,7 +104,7 @@ export default function ScheduleBlocksList({
                 Edit
               </button>
               <button
-                onClick={() => handleDelete(block)}
+                onClick={() => setConfirmDelete(block)}
                 disabled={deleting === block.id}
                 className="text-xs text-red-600 hover:text-red-800 disabled:text-gray-400"
               >
@@ -91,6 +114,7 @@ export default function ScheduleBlocksList({
           </div>
         </div>
       ))}
-    </div>
+      </div>
+    </>
   )
 }

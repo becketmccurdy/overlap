@@ -2,33 +2,39 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import toast from 'react-hot-toast'
+import { FriendListSkeleton } from './Skeleton'
+import ConfirmDialog from './ConfirmDialog'
 
 export default function FriendList({ onToggle }: { onToggle?: (id: string, active: boolean) => void }) {
   const { user } = useAuth()
   const [friends, setFriends] = useState<any[]>([])
   const [active, setActive] = useState<Record<string, boolean>>({})
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null)
 
   useEffect(() => {
     loadFriends()
   }, [])
 
   async function loadFriends() {
-    const { data } = await supabase.auth.getSession()
-    const token = data?.session?.access_token
-    const headers: any = {}
-    if (token) headers['Authorization'] = `Bearer ${token}`
+    setLoading(true)
+    try {
+      const { data } = await supabase.auth.getSession()
+      const token = data?.session?.access_token
+      const headers: any = {}
+      if (token) headers['Authorization'] = `Bearer ${token}`
 
-    const res = await fetch('/api/friends/list', { headers })
-    const d = await res.json()
-    setFriends(d || [])
+      const res = await fetch('/api/friends/list', { headers })
+      const d = await res.json()
+      setFriends(d || [])
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleDelete(friendshipId: string, friendName: string) {
-    if (!confirm(`Are you sure you want to remove ${friendName} from your friends?`)) {
-      return
-    }
-
     setDeleting(friendshipId)
     try {
       const { data } = await supabase.auth.getSession()
@@ -54,21 +60,39 @@ export default function FriendList({ onToggle }: { onToggle?: (id: string, activ
           })
           onToggle?.(friendshipId, false)
         }
+        toast.success(`${friendName} removed from friends`)
+        setConfirmDelete(null)
       } else {
         const error = await res.json()
-        alert(`Failed to delete friend: ${error.error || 'Unknown error'}`)
+        toast.error(`Failed to remove friend: ${error.error || 'Unknown error'}`)
       }
     } catch (err) {
       console.error('Delete friend error:', err)
-      alert('Failed to delete friend. Please try again.')
+      toast.error('Failed to remove friend. Please try again.')
     } finally {
       setDeleting(null)
     }
   }
 
+  if (loading) {
+    return <FriendListSkeleton />
+  }
+
   return (
-    <div className="space-y-2">
-      {friends.map((f) => (
+    <>
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        title="Remove Friend"
+        message={`Are you sure you want to remove ${confirmDelete?.name} from your friends? This action cannot be undone.`}
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={() => confirmDelete && handleDelete(confirmDelete.id, confirmDelete.name)}
+        onCancel={() => setConfirmDelete(null)}
+      />
+
+      <div className="space-y-2">
+        {friends.map((f) => (
         <div key={f.id} className="flex items-center justify-between p-3 border rounded shadow-sm bg-white">
           <div className="flex-1">
             <div className="font-medium text-sm">{f.display_name || f.username}</div>
@@ -89,7 +113,7 @@ export default function FriendList({ onToggle }: { onToggle?: (id: string, activ
               <span className="text-sm">Show</span>
             </label>
             <button
-              onClick={() => handleDelete(f.friendship_id, f.display_name || f.username)}
+              onClick={() => setConfirmDelete({ id: f.friendship_id, name: f.display_name || f.username })}
               disabled={deleting === f.friendship_id}
               className="text-sm text-red-600 hover:text-red-800 disabled:text-gray-400 disabled:cursor-not-allowed"
               title="Remove friend"
@@ -98,8 +122,15 @@ export default function FriendList({ onToggle }: { onToggle?: (id: string, activ
             </button>
           </div>
         </div>
-      ))}
-      {friends.length === 0 && <div className="text-sm text-gray-500">No friends yet</div>}
-    </div>
+        ))}
+        {friends.length === 0 && (
+          <div className="text-center py-8 bg-gray-50 rounded border border-dashed border-gray-300">
+            <div className="text-4xl mb-2">👥</div>
+            <p className="text-sm font-medium text-gray-700 mb-1">No friends yet</p>
+            <p className="text-xs text-gray-500 px-4">Add friends to see when you're both free</p>
+          </div>
+        )}
+      </div>
+    </>
   )
 }

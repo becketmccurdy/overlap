@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSchedule } from '../hooks/useSchedule'
 import { format } from 'date-fns'
+import toast from 'react-hot-toast'
 
 type Block = {
   id: string
@@ -68,19 +69,29 @@ export default function AddBlockForm({
       }
 
       if (editingBlock) {
-        await updateBlock(editingBlock.id, payload)
-        onCancelEdit?.()
+        const result = await updateBlock(editingBlock.id, payload)
+        if (result.error) {
+          toast.error(`Failed to update block: ${result.error.message}`)
+        } else {
+          toast.success('Schedule block updated successfully')
+          onCancelEdit?.()
+        }
       } else {
-        await addBlock(payload)
-        // Reset form after adding
-        setTitle('')
-        setType('class')
-        setStartTime('10:00')
-        setEndTime('10:50')
-        setDaysOfWeek([1, 3, 5])
-        setStartDate(format(new Date(), 'yyyy-MM-dd'))
-        setEndDate('')
-        setColor('#7c3aed')
+        const result = await addBlock(payload)
+        if (result.error) {
+          toast.error(`Failed to add block: ${result.error.message}`)
+        } else {
+          toast.success('Schedule block added successfully')
+          // Reset form after adding
+          setTitle('')
+          setType('class')
+          setStartTime('10:00')
+          setEndTime('10:50')
+          setDaysOfWeek([1, 3, 5])
+          setStartDate(format(new Date(), 'yyyy-MM-dd'))
+          setEndDate('')
+          setColor('#7c3aed')
+        }
       }
       onAdded?.()
     } finally {

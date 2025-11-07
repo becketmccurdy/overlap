@@ -7,10 +7,11 @@ import FriendList from '../../components/FriendList'
 import { useAuth } from '../../contexts/AuthContext'
 import { useSchedule } from '../../hooks/useSchedule'
 import { formatISO, startOfWeek, addDays } from 'date-fns'
+import { ScheduleBlockSkeleton } from '../../components/Skeleton'
 
 export default function DashboardPage() {
   const { user, profile } = useAuth()
-  const { blocks, deleteBlock, refetch } = useSchedule(user?.id || '')
+  const { blocks, loading: scheduleLoading, deleteBlock, refetch } = useSchedule(user?.id || '')
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([])
   const weekStart = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 0 }), [])
   const weekEnd = useMemo(() => addDays(weekStart, 6), [weekStart])
@@ -48,14 +49,18 @@ export default function DashboardPage() {
             editingBlock={editingBlock}
             onCancelEdit={() => setEditingBlock(null)}
           />
-          <ScheduleBlocksList
-            blocks={blocks}
-            onEdit={(block) => setEditingBlock(block)}
-            onDelete={async (id) => {
-              await deleteBlock(id)
-              refetch()
-            }}
-          />
+          {scheduleLoading ? (
+            <ScheduleBlockSkeleton />
+          ) : (
+            <ScheduleBlocksList
+              blocks={blocks}
+              onEdit={(block) => setEditingBlock(block)}
+              onDelete={async (id) => {
+                await deleteBlock(id)
+                refetch()
+              }}
+            />
+          )}
           <div className="mt-6">
             <h4 className="font-semibold mb-2">Friends</h4>
             <FriendList
@@ -112,7 +117,20 @@ export default function DashboardPage() {
                   <div className="text-sm bg-indigo-50 px-2 py-1 rounded">{w.count} free</div>
                 </div>
               ))}
-              {overlaps.length === 0 && <div className="text-sm text-gray-500">No free windows found</div>}
+              {overlaps.length === 0 && selectedFriendIds.length > 0 && (
+                <div className="text-center py-6 bg-gray-50 rounded border border-dashed border-gray-300">
+                  <div className="text-3xl mb-2">🔍</div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">No overlapping free time found</p>
+                  <p className="text-xs text-gray-500">Try adjusting the minimum users or adding more schedule blocks</p>
+                </div>
+              )}
+              {overlaps.length === 0 && selectedFriendIds.length === 0 && (
+                <div className="text-center py-6 bg-gray-50 rounded border border-dashed border-gray-300">
+                  <div className="text-3xl mb-2">👈</div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Select friends to find overlap</p>
+                  <p className="text-xs text-gray-500">Check the "Show" box next to friends to see when you're both free</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
+import toast from 'react-hot-toast'
 
 export default function OnboardingPage() {
   const { profile, updateProfile, user } = useAuth()
@@ -36,7 +37,10 @@ export default function OnboardingPage() {
         username,
         college_id: college || null,
       })
+      toast.success('Profile setup complete')
       router.push('/dashboard')
+    } catch (err) {
+      toast.error('Failed to update profile. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -79,7 +83,9 @@ export default function OnboardingPage() {
             type="button"
             onClick={() => {
               // preset MWF 10:00–10:50 onboarding helper note
-              alert('Preset schedules will be added in-app. For now, add them on dashboard.')
+              toast('Preset schedules will be added in-app. For now, add them on dashboard.', {
+                icon: 'ℹ️',
+              })
             }}
             className="px-3 py-2 border rounded"
           >
