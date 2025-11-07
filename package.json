@@ -1,0 +1,35 @@
+{
+  "name": "overlap",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "db:push": "echo \"Run supabase/supabase.sql in Supabase SQL editor\"",
+    "seed": "node ./scripts/seed.js",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.28.0",
+    "date-fns": "^2.30.0",
+    "date-fns-tz": "^2.0.0",
+    "framer-motion": "^10.12.12",
+    "next": "14.0.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "zustand": "^4.4.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "autoprefixer": "^10.4.14",
+    "eslint": "^8.49.0",
+    "playwright": "^1.40.0",
+    "postcss": "^8.4.24",
+    "tailwindcss": "^3.4.8",
+    "typescript": "^5.5.0"
+  }
+}
